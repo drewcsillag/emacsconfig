@@ -1,0 +1,500 @@
+#+title: emacs_editor_config
+* My .emacs file is basically a shell
+has the custom-set things, inhibits the splash screen
+sets up packages and then kicks off the org part of init
+#+begin_src
+(setq inhibit-splash-screen t)
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-pacakages '(org-roam org))
+ '(package-selected-packages
+   '(markdown-preview-mode markdown-mode yaml-mode protobuf-mode go-mode ## go magit org-bullets htmlize ox-twbs org-roam)))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(default ((t (:inherit nil :extend nil :stipple nil :background "#000000" :foreground "#FFFFFF" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 140 :width normal :foundry "nil" :family "Menlo")))))
+
+(package-initialize)
+
+(org-babel-load-file "~/org/emacs-config.org")
+
+#+end_src
+* To get this loaded at startup 
+add =(org-babel-load-file "~/org/emacs-config.org")= to .emacs
+
+idea for this way of doing it from [[https://www.youtube.com/watch?app=desktop&v=SzA2YODtgK4][Getting started with org mode]]
+
+* Set my screen colors
+#+begin_src emacs-lisp
+(add-to-list 'default-frame-alist '(foreground-color . "#FFFFFF"))
+(add-to-list 'default-frame-alist '(background-color . "#000000"))
+#+end_src
+
+* menus and toolbars
+#+begin_src emacs-lisp
+(menu-bar-mode +1)
+(tool-bar-mode -1)
+#+end_src
+
+* Setup package stuff
+#+begin_src emacs-lisp
+(require 'package)
+(add-to-list 'package-archives
+             '("melpa" . "http://melpa.org/packages/") t)
+#+end_src
+
+* Configure org-mode basic bits
+#+begin_src emacs-lisp
+(setq org-agenda-files '("~/org/main.org" "~/org/main.org_archive" "~/org/someday.org" "~/org/someday.org_archive"))
+(setq org-clock-display-default-range 'untilnow)
+(setq org-enforce-todo-dependencies t)
+(setq org-log-done 'time)
+(setq org-tags-column 90)
+(setq org-todo-repeat-to-state "TODO") 
+#+end_src
+
+* setup org roam
+#+begin_src emacs-lisp
+(setq org-roam-directory "~/org")
+(add-hook 'after-init-hook 'org-roam-mode)
+#+end_src
+
+* Tweak some agenda settings
+#+begin_src emacs-lisp
+(setq org-agenda-log-mode-items '(closed)) 
+;; otherwise will show clocked items and state changes if state change
+;; logging is on
+
+;; default agenda a view should be just a day
+(setq org-agenda-span 1)
+#+end_src
+
+* Persistently enable some things that emacs disables by default
+#+begin_src emacs-lisp
+(put 'upcase-region 'disabled nil)
+(put 'narrow-to-region 'disabled nil)
+#+end_src
+
+* For cases where org-roam is too cumbersome 
+like when the headline is too long and I don't want to bother
+
+Also, because I hadn't understood how org-roam links really worked
+#+begin_src emacs-lisp
+(defun make-uuid-link ()
+  (interactive)
+  (let (
+	  (existing-id (org-entry-get (mark) "ID"))
+	  (id (shell-command-to-string "uuidgen | tr -d '\r' | tr -d '\n'"))
+	  id-to-insert
+	  )
+    (if (null existing-id)
+	  (save-excursion
+	    (goto-char (mark))
+	    (org-set-property "ID" id)))
+    (setq id-to-insert (or existing-id id))
+    (insert "[[id:" id-to-insert "][")))
+#+end_src
+
+
+* Create a function so my meeting notes are properly labelled
+#+begin_src emacs-lisp
+(defun find-meeting-notes (&optional name)
+  "Find the person that I met with"
+  (interactive "sMet With> ")
+  (org-tags-view nil (concat "person+LEVEL=3+ITEM={\\(^\\| \\)" name ".*$}"))
+)
+
+(defun add-meeting-note ()
+  "Now create the meeting heading with a timestamp"
+  (interactive)
+  (end-of-line)
+  (search-backward-regexp "^\\*\\*\\* ")
+  (outline-show-branches)
+  (set-mark-command nil)
+  (end-of-line)
+  (kill-ring-save 0 0 t)
+  (org-narrow-to-subtree)
+  (let (
+        (found-subtree (search-forward-regexp "^\\*\\*\\*\\* " nil t)))
+    (if found-subtree
+	(progn ;; found an existing meeting subtree
+	  (beginning-of-line)
+	  (org-return)
+	  (previous-line)
+	  )
+      (progn
+	(end-of-buffer)
+	(org-return)
+	)
+      ))
+  (yank)
+  (beginning-of-line)
+  (org-metaright)
+  (org-set-tags nil)
+  (right-char 5)
+  (org-time-stamp 1)
+  (insert-char 32)
+  (org-set-tags ":comms:")
+  (end-of-line)
+  (org-return)
+  (previous-line)
+  (search-forward ">")
+  (search-backward " ")
+  (zap-up-to-char 1 62) ;; >
+  (insert-char 32)
+  (widen)
+  )
+#+end_src
+
+#+RESULTS:
+: add-meeting-note
+
+* TURNED OFF Setup RSS Feeds (^C^X g to update)
+#+begin_src emacs-lisp
+;(setq org-feed-alist 
+;  '(
+;  ("Hacker News" "https://hnrss.org/frontpage?count=50" "~/org/rss/feeds.org" "Hacker News Entries")
+;  ("Ask A Manager" "https://www.askamanager.org/feed" "~/org/rss/feeds.org" "Ask A Manager")
+;  ("Instapundit" "https://pjmedia.com/instapundit/feed" "~/org/rss/feeds.org" "Instapundit")
+;  ))
+#+end_src
+
+** A failed attempt to get reddit orgmode feed to work
+#+begin_src 
+(setq org-feed-retrieve-method 'curl)
+(setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin"))
+#+end_src
+
+#+begin_src shell
+echo $PATH
+export PATH
+wget -h
+#+end_src
+
+#+begin_src 
+;(defun org-feed-get-feed (url)
+;  "Get the RSS feed file at URL and return the buffer."
+;  (cond
+;   ((eq org-feed-retrieve-method 'url-retrieve-synchronously)
+;    (org-feed-skip-http-headers (url-retrieve-synchronously url)))
+;   ((eq org-feed-retrieve-method 'curl)
+;    (ignore-errors (kill-buffer org-feed-buffer))
+;    (call-process "curl" nil org-feed-buffer nil "--silent" url)
+;    org-feed-buffer)
+;   ((eq org-feed-retrieve-method 'wget)
+;    (ignore-errors (kill-buffer org-feed-buffer))
+;    (call-process "wget" nil org-feed-buffer nil "-q" "-O" "-" url)
+;    org-feed-buffer)
+;   ((functionp org-feed-retrieve-method)
+;    (funcall org-feed-retrieve-method url))))
+#+end_src
+
+* So babel will be able to run stuff
+
+#+begin_src emacs-lisp
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((shell . t)(python . t)))
+#+end_src
+
+#+RESULTS:
+
+* Make for pretty org bullets (needs the org-bullets package installed)
+Also adds linewrap for long lines
+(mostly needed when I read RSS feeds, but width scrolling sucks)
+#+begin_src emacs-lisp
+;; needs org-bullets package
+(add-hook 'org-mode-hook
+	  (lambda () (org-bullets-mode t) (visual-line-mode)))
+#+end_src
+
+* so we can get pretty HTML export
+#+begin_src emacs-lisp
+(require 'ox-twbs)
+#+end_src
+
+#+RESULTS:
+: ox-twbs
+
+* source code highlighting in exported HTML (needs htmlize to be installed)
+#+begin_src emacs-lisp
+(require 'htmlize)
+#+end_src
+
+#+RESULTS:
+: htmlize
+
+* Theoretically to get source code highlighting with latex
+but I don't have pdflatex installed... :(
+#+begin_src emacs-lisp
+;; (require 'org)
+;; (require 'ox-latex)
+;; (add-to-list 'org-latex-packages-alist '("" "minted"))
+;; (setq org-latex-listings 'minted) 
+#+end_src
+
+* A "reset" to what I want to normally see
+#+begin_src emacs-lisp
+(defun go-to-today ()
+  (interactive)
+  (switch-to-buffer "main.org")  
+  (widen)
+  (org-global-cycle 1)
+  (beginning-of-buffer)
+  (search-forward "* TODAY")
+  (outline-show-children 1)
+  (search-forward "----------")
+  (org-forward-heading-same-level 1)
+  )
+#+end_src
+
+#+RESULTS:
+: go-to-today
+
+* To export Google calendar
+#+begin_quote
+1. On your computer, open Google Calendar. You can't export events
+   from the Google Calendar app.
+2. On the left side of the page, find the "My calendars"
+   section. You might need to click to expand it.
+3. Point to the calendar you want to export, click More Moreand then
+   Settings and sharing.
+4. Under "Calendar settings," click Export calendar.
+5. An ICS file of your events will start to download.
+#+end_quote
+
+* Exclude some tags from inheritance recursive
+#+begin_src emacs-lisp
+(setq org-tags-exclude-from-inheritance '("mentee"))
+#+end_src
+
+#+RESULTS:
+| mentee |
+* Open up main.org
+#+begin_src emacs-lisp
+(find-file "~/org/main.org")
+#+end_src
+
+* custom agenda commands
+#+begin_src emacs-lisp
+(load-library "org-agenda")
+#+end_src
+** The more detailed what did I do
+#+begin_src emacs-lisp
+(load-library "org-agenda")
+(setq my-org-agenda-batch-view
+      '("F" "Full view"
+	agenda ""
+	((org-agenda-span 1)
+	 (org-agenda-files '("~/org/main.org" "~/org/main.org_archive"
+			     "~/org/someday.org" "~/org/someday.org_archive"))
+	 (org-agenda-start-with-log-mode '(closed clock state))
+	 (org-agenda-archives-mode 'files))))
+#+end_src
+
+
+** Comms review
+#+begin_src emacs-lisp
+(setq my-org-agenda-comms-view
+      '("r" "Review View"
+	agenda ""
+	((org-agenda-span 14)
+	 (org-agenda-files '("~/org/main.org" "~/org/main.org_archive"
+			     "~/org/someday.org" "~/org/someday.org_archive"))
+	 (org-agenda-filter-apply (list "+comms"))
+	 (org-agenda-tag-filter-preset (list "+comms"))
+	 (org-occur-case-fold-search nil)
+	 (org-agenda-archives-mode 'files))))
+#+end_src
+** Captured Docs Last Two Weeks
+#+begin_src emacs-lisp
+(setq my-org-agenda-docs-fortnight
+      '("d" "docs in last fortnight"
+	tags "CAPTURED>=\"<-1w\>\""))
+#+end_src
+
+** Set the list
+#+begin_src emacs-lisp
+(setq org-agenda-custom-commands (list my-org-agenda-batch-view my-org-agenda-comms-view my-org-agenda-docs-fortnight)) 
+#+end_src
+
+* Keep org from getting crazy with indentation
+#+begin_src emacs-lisp
+(setq org-adapt-indentation nil)
+(setq org-src-preserve-indentation t)
+#+end_src
+* Change heading continuation
+#+begin_src emacs-lisp
+(setq org-ellipsis "⏎")
+#+end_src
+
+* My capture mode
+#+begin_src emacs-lisp
+(defun my-org-capture ()
+  (interactive)
+  (switch-to-buffer "main.org")
+  (if (null (get-buffer "main.org<capture>"))
+	(clone-indirect-buffer-other-window "main.org<capture>" t))
+  (switch-to-buffer "main.org<capture>")
+  (beginning-of-buffer)
+  (search-forward "** -- Dumping ground")
+  (beginning-of-line)
+  (set-mark (point))
+  (end-of-line)
+  (org-return)
+  (narrow-to-region (mark) (point))
+  )
+#+end_src
+
+* Grep in org
+#+begin_src emacs-lisp
+(defun my-org-grep (thing)
+  (interactive "MSearch main org for:")
+  (grep (concat "grep -i -n " thing " ~/org/main.org ~/org/main.org_archive ~/org/someday.org ~/org/someday.org_archive")))
+  
+#+end_src
+  
+* Make it so I can enter dates the way I write them
+
+I write them like 83-9 for 8:30-9:00
+or 13-3 for 13:00-13:30
+#+begin_src emacs-lisp
+(defun my-date-fixit-get-hour (s)
+  "Given something like 8-3 or 123-13 as S, find the hour (8 and 12 respectively) and return it.
+   Also used for the post dash part of parsing in some cases"
+  (let ((first_one (substring s 0 1)))
+    (cond
+     ((string= "8" first_one) first_one)
+     ((string= "9" first_one) first_one)
+     (t (substring s 0 2)))
+    ))
+
+(defun my-date-fixit-get-minute (s hour)
+  "Given the HOUR it found and the characters (S) following the hour it found, return a list of 
+   (MINUTES, CHARS_CONSUMED)"
+  (let
+      ((min_candidate (substring s (length hour)))
+       )
+    (cond
+     ((= 0 (length min_candidate))
+      (list (concat ":" "00") 0))
+     ((string= "-" (substring min_candidate 0 1))
+      (list (concat ":" "00") 0))
+     ((= 1 (length min_candidate))
+      (list (concat ":" min_candidate "0") 1))
+     ((string= "-" (substring min_candidate 1 2))
+      (list (concat ":" (substring min_candidate 0 1) "0") 1))
+     (t
+      (list (concat ":" (substring min_candidate 0 2)) 2)))))
+
+
+(defun my-date-fixit (d)
+  "Given a string in D like 13-14 or 123-13, return 13:00-14:00, 12:30-13:00 respectively. The code
+   assumes that the second time range never happens during the 3am hour"
+  (letrec (
+	   (from_hour (my-date-fixit-get-hour d))
+	   (from_minute (my-date-fixit-get-minute d from_hour))
+	   (after_minute (substring d (+ (length from_hour) (cadr from_minute))))
+	   (after_dash (substring after_minute 1))
+	   (to_hour (if (string= "3" after_dash) (concat from_hour ":30")
+		      (my-date-fixit-get-hour after_dash)))
+	   (to_minute  (if (string= "3" after_dash) (list "" t) 
+			 (my-date-fixit-get-minute after_dash to_hour))))
+    
+    (concat "" from_hour (car from_minute) "-" to_hour (car to_minute))
+    ))
+
+(defun set-meeting-time ()
+  "Given a timestamp that looks like this: <2021-04-22 Thu 133-14> where point is at least before the >,
+   convert the 133-14 to 13:30-14:00"
+  (interactive)
+  (search-forward ">")
+  (left-char)
+  (set-mark (point))
+  (search-backward " ")
+  (right-char)
+  
+  (let ((date_info (buffer-substring (mark) (point))))
+    (kill-region (point) (mark))
+    (insert (my-date-fixit date_info)))
+  (next-line)
+  )
+
+;; test to make sure things work after I twiddle the code
+(list
+ (list 'from_hour (my-date-fixit-get-hour "83-9"))
+ (list 'from_minute (my-date-fixit-get-minute "83-9" "8"))
+ (list 'after_minute (substring "83-9" (+ 1 1)))
+ (list 'after_dash (substring "-9" 1))
+ (list 'to_hour (if (string= "3" "9") (concat from_hour ":30")
+		  (my-date-fixit-get-hour "9")))
+ (list 'result (my-date-fixit "83-9"))
+ (list 'misc (my-date-fixit "13-14") (my-date-fixit "133-14")
+       (my-date-fixit "13-3"))
+ )
+#+end_src
+
+#+RESULTS:
+| from_hour    |           8 |             |             |
+| from_minute  |     (:30 1) |             |             |
+| after_minute |          -9 |             |             |
+| after_dash   |           9 |             |             |
+| to_hour      |           9 |             |             |
+| result       |   8:30-9:00 |             |             |
+| misc         | 13:00-14:00 | 13:30-14:00 | 13:00-13:30 |
+
+* setup process to save all org files and commit to git
+#+begin_src emacs-lisp
+(defun save-org ()
+  (interactive)
+  (org-save-all-org-buffers)
+  (save-some-buffers t)
+  (shell-command "cd ~/org ; ./oc"))
+#+end_src
+
+* Note a doc link with a READ
+#+begin_src emacs-lisp
+(defun make-doc-read-item (&optional title author via)
+  (interactive "stitle: 
+sauthor: 
+svia: ")
+  (beginning-of-line)
+  (insert "** READ 
+")
+  (previous-line)
+  (beginning-of-line)
+  (right-char 8)
+  (if (not (or (null title) (string= "" title)))
+      (progn
+	(insert (concat title " "))
+	(org-set-property "TITLE" title)))
+  (org-set-property "CAPTURED"  (format-time-string "<%Y-%m-%d %a %H:%M>" (current-time)))
+  (org-set-property "CATEGORY" "captured")
+  (if (not (or (null author) (string= "" author)))
+      (org-set-property "AUTHOR" author))
+  (if (not (or (null via) (string= "" via)))
+      (org-set-property "VIA" via))
+  )
+#+end_src
+
+#+RESULTS:
+: make-doc-read-item
+
+* All keybindings
+#+begin_src emacs-lisp
+(define-key org-mode-map (kbd "C-c C-x u") 'make-uuid-link)
+(define-key org-mode-map (kbd "C-c C-x m") 'add-meeting-note)
+(define-key org-mode-map (kbd "C-c C-x C-m") 'find-meeting-notes)
+(define-key org-mode-map (kbd "C-c C-x C-t") 'go-to-today)
+;; binds over top of org-columns existing binding
+(define-key org-mode-map (kbd "C-c C-x C-c") 'my-org-capture)
+(define-key org-mode-map (kbd "C-c C-x C-s") 'save-org)
+(define-key org-mode-map (kbd "C-c C-x C-g") 'my-org-grep)
+(define-key org-mode-map (kbd "C-c C-x r") 'make-doc-read-item)
+(define-key org-mode-map (kbd "C-c C-x x") 'set-meeting-time)
+#+end_src
