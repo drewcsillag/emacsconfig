@@ -498,3 +498,118 @@ svia: ")
 (define-key org-mode-map (kbd "C-c C-x r") 'make-doc-read-item)
 (define-key org-mode-map (kbd "C-c C-x x") 'set-meeting-time)
 #+end_src
+
+* Under consideration
+** Ways to ensure everything has an id
+#+begin_src emacs-lisp
+(require 'org-id)
+#+end_src
+
+(defun my/org-add-ids-to-headlines-in-file ()
+  "Add ID properties to all headlines in the current file which
+do not already have one."
+  (interactive)
+  (org-map-entries 'org-id-get-create))
+  
+(add-hook 'org-mode-hook
+          (lambda ()
+            (add-hook 'before-save-hook 'my/org-add-ids-to-headlines-in-file nil 'local)))
+
+if I used capture
+(add-hook 'org-capture-prepare-finalize-hook 'org-id-get-create)
+
+#+RESULTS:
+: org-id
+
+** TODO Hide property drawers - Not for now, because I can't unhide them
+#+begin_src 
+(defun org-cycle-hide-drawers (state)
+  "Re-hide all drawers after a visibility state change."
+  (when (and (derived-mode-p 'org-mode)
+             (not (memq state '(overview folded contents))))
+    (save-excursion
+      (let* ((globalp (memq state '(contents all)))
+             (beg (if globalp
+                    (point-min)
+                    (point)))
+             (end (if globalp
+                    (point-max)
+                    (if (eq state 'children)
+                      (save-excursion
+                        (outline-next-heading)
+                        (point))
+                      (org-end-of-subtree t)))))
+        (goto-char beg)
+        (while (re-search-forward org-drawer-regexp end t)
+          (save-excursion
+            (beginning-of-line 1)
+            (when (looking-at org-drawer-regexp)
+              (let* ((start (1- (match-beginning 0)))
+                     (limit
+                       (save-excursion
+                         (outline-next-heading)
+                           (point)))
+                     (msg (format
+                            (concat
+                              "org-cycle-hide-drawers:  "
+                              "`:END:`"
+                              " line missing at position %s")
+                            (1+ start))))
+                (if (re-search-forward "^[ \t]*:END:" limit t)
+                  (outline-flag-region start (point-at-eol) t)
+                  (user-error msg))))))))))
+#+end_src
+
+#+RESULTS:
+: org-cycle-hide-drawers
+
+** BLOCKED Ensure headings have a created attribute - on getting org-expiry from somewhere
+#+begin_src 
+;;
+;; Allow automatically handing of created/expired meta data.
+;;
+(require 'org-expiry)
+;; Configure it a bit to my liking
+(setq
+  org-expiry-created-property-name "CREATED" ; Name of property when an item is created
+  org-expiry-inactive-timestamps   t         ; Don't have everything in the agenda view
+)
+
+(defun mrb/insert-created-timestamp()
+  "Insert a CREATED property using org-expiry.el for TODO entries"
+  (org-expiry-insert-created)
+  (org-back-to-heading)
+  (org-end-of-line)
+  (insert " ")
+)
+  
+;; Whenever a TODO entry is created, I want a timestamp
+;; Advice org-insert-todo-heading to insert a created timestamp using org-expiry
+(defadvice org-insert-todo-heading (after mrb/created-timestamp-advice activate)
+  "Insert a CREATED property using org-expiry.el for TODO entries"
+  (mrb/insert-created-timestamp)
+)
+;; Make it active
+(ad-activate 'org-insert-todo-heading)
+
+#+end_src
+*** If I ever use emacs capture (instead of mine own)
+(require 'org-capture)
+(defadvice org-capture (after mrb/created-timestamp-advice activate)
+  "Insert a CREATED property using org-expiry.el for TODO entries"
+  ; Test if the captured entry is a TODO, if so insert the created
+  ; timestamp property, otherwise ignore
+  (when (member (org-get-todo-state) org-todo-keywords-1)
+    (mrb/insert-created-timestamp)))
+(ad-activate 'org-capture)
+
+;; Add feature to allow easy adding of tags in a capture window
+(defun mrb/add-tags-in-capture()
+  (interactive)
+  "Insert tags in a capture window without losing the point"
+  (save-excursion
+    (org-back-to-heading)
+    (org-set-tags)))
+;; Bind this to a reasonable key
+(define-key org-capture-mode-map "\C-c\C-t" 'mrb/add-tags-in-capture)
+
