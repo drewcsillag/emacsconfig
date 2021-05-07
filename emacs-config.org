@@ -315,7 +315,7 @@ but I don't have pdflatex installed... :(
 #+begin_src emacs-lisp
 (setq my-org-agenda-docs-fortnight
       '("d" "docs in last fortnight"
-	tags "CAPTURED>=\"<-1w\>\""))
+	tags "CAPTURED>=\"<-2w\>\""))
 #+end_src
 
 ** Set the list
@@ -402,9 +402,11 @@ or 13-3 for 13:00-13:30
 	   (after_minute (substring d (+ (length from_hour) (cadr from_minute))))
 	   (after_dash (substring after_minute 1))
 	   (to_hour (if (string= "3" after_dash) (concat from_hour ":30")
-		      (my-date-fixit-get-hour after_dash)))
-	   (to_minute  (if (string= "3" after_dash) (list "" t) 
-			 (my-date-fixit-get-minute after_dash to_hour))))
+		      (if (string= "45" after_dash) (concat from_hour ":45")
+			(my-date-fixit-get-hour after_dash))))
+	   (to_minute  (if (string= "3" after_dash) (list "" t)
+			 (if (string= "45" after_dash) (list "" t) 
+			   (my-date-fixit-get-minute after_dash to_hour)))))
     
     (concat "" from_hour (car from_minute) "-" to_hour (car to_minute))
     ))
@@ -436,6 +438,7 @@ or 13-3 for 13:00-13:30
  (list 'result (my-date-fixit "83-9"))
  (list 'misc (my-date-fixit "13-14") (my-date-fixit "133-14")
        (my-date-fixit "13-3"))
+ (list 'do-45 (my-date-fixit "13-45"))
  )
 #+end_src
 
@@ -447,6 +450,17 @@ or 13-3 for 13:00-13:30
 | to_hour      |           9 |             |             |
 | result       |   8:30-9:00 |             |             |
 | misc         | 13:00-14:00 | 13:30-14:00 | 13:00-13:30 |
+| do-45        | 13:00-13:45 |             |             |
+
+** what it should look like
+| from_hour    |           8 |             |             |
+| from_minute  |     (:30 1) |             |             |
+| after_minute |          -9 |             |             |
+| after_dash   |           9 |             |             |
+| to_hour      |           9 |             |             |
+| result       |   8:30-9:00 |             |             |
+| misc         | 13:00-14:00 | 13:30-14:00 | 13:00-13:30 |
+| do-45        | 13:00-13:45 |             |             |
 
 * setup process to save all org files and commit to git
 #+begin_src emacs-lisp
