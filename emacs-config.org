@@ -343,13 +343,19 @@ but I don't have pdflatex installed... :(
   (switch-to-buffer "main.org<capture>")
   (beginning-of-buffer)
   (search-forward "** -- Dumping ground")
+  (previous-line)
   (beginning-of-line)
   (set-mark (point))
+  (next-line)
+  (next-line)
   (end-of-line)
   (org-return)
   (narrow-to-region (mark) (point))
   )
 #+end_src
+
+#+RESULTS:
+: my-org-capture
 
 * Grep in org
 #+begin_src emacs-lisp
