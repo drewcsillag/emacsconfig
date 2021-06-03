@@ -317,6 +317,25 @@ but I don't have pdflatex installed... :(
       '("d" "docs in last fortnight"
 	tags "CAPTURED>=\"<-2w\>\""))
 #+end_src
+** Find docs by Author
+
+#+begin_src emacs-lisp
+(defun find-docs-by-author (&optional name)
+  "Find docs by author - caveat last 4 weeks"
+  (interactive "sAuthor> ")
+  (org-tags-view nil (concat "CAPTURED>=\"<-4w\>\"+AUTHOR={" name "}"))
+)
+(defun find-docs-by-via (&optional name)
+  "Find docs gotten via... - caveat last 4 weeks"
+  (interactive "sVia> ")
+  (org-tags-view nil (concat "CAPTURED>=\"<-4w\>\"+VIA={" name "}"))
+)
+(defun find-docs-by-person (&optional name)
+  "Find docs by author or via  - caveat last 4 weeks"
+  (interactive "sPerson> ")
+  (org-tags-view nil (concat "CAPTURED>=\"<-4w\>\"+VIA={" name "}"))
+)
+#+end_src
 
 ** Set the list
 #+begin_src emacs-lisp
