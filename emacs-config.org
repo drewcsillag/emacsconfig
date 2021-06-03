@@ -1,5 +1,6 @@
 #+title: emacs_editor_config
-* My .emacs file is basically a shell
+* Initial setup stuff to use this in a new place
+** My .emacs file is basically a shell to load this file
 has the custom-set things, inhibits the splash screen
 sets up packages and then kicks off the org part of init
 #+begin_src
@@ -21,8 +22,20 @@ sets up packages and then kicks off the org part of init
 
 (package-initialize)
 
-(org-babel-load-file "~/org/emacs-config.org")
+(org-babel-load-file "~/mydevel/emacsconfig/emacs-config.org")
 
+#+end_src
+** Headings of main.org
+#+begin_src 
+  #+title: main
+  #+COLUMNS: %ITEM %AUTHOR %VIA
+  #+TODO: TALK(l) READ(r) SLACK(s) UNKNOWN(k) MAYBE(m) WAITING(w) BAKING(b) IN_PROGRESS(i) TODO(t) | DONE(d) NOPE(n) FAIL(f) ALREADY_DONE(a) DUP(u) TABLED
+
+  ^C^X^T assumes theres a 
+  * TODAY
+  heading with a 
+  ** ---------------- 
+  subheading 
 #+end_src
 * To get this loaded at startup 
 add =(org-babel-load-file "~/org/emacs-config.org")= to .emacs
@@ -333,7 +346,7 @@ but I don't have pdflatex installed... :(
 (defun find-docs-by-person (&optional name)
   "Find docs by author or via  - caveat last 4 weeks"
   (interactive "sPerson> ")
-  (org-tags-view nil (concat "CAPTURED>=\"<-4w\>\"+VIA={" name "}"))
+  (org-tags-view nil (concat "CAPTURED>=\"<-4w\>\"+VIA={" name "}|" "CAPTURED>=\"<-4w\>\"+AUTHOR={" name "}"))
 )
 #+end_src
 
