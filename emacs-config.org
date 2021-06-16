@@ -330,9 +330,15 @@ but I don't have pdflatex installed... :(
       '("d" "docs in last fortnight"
 	tags "CAPTURED>=\"<-2w\>\""))
 #+end_src
-** Find docs by Author
+** Find docs by Author/via/either/title
 
 #+begin_src emacs-lisp
+(defun find-docs-by-title (&optional name)
+  "Find docs by title"
+  (interactive "sTitle> ")
+  (org-tags-view nil (concat "ITEM={" name "}+CAPTURED={.}"))
+)
+
 (defun find-docs-by-author (&optional name)
   "Find docs by author - caveat last 4 weeks"
   (interactive "sAuthor> ")
@@ -374,6 +380,8 @@ but I don't have pdflatex installed... :(
 	(clone-indirect-buffer-other-window "main.org<capture>" t))
   (switch-to-buffer "main.org<capture>")
   (beginning-of-buffer)
+  (search-forward "* TODAY")
+  (org-show-children)
   (search-forward "** -- Dumping ground")
   (previous-line)
   (beginning-of-line)
@@ -525,7 +533,7 @@ svia: ")
       (progn
 	(insert (concat title " "))
 	(org-set-property "TITLE" title)))
-  (org-set-property "CAPTURED"  (format-time-string "<%Y-%m-%d %a %H:%M>" (current-time)))
+  (org-set-property "CAPTURED"  (format-time-string "[%Y-%m-%d %a %H:%M]" (current-time)))
   (org-set-property "CATEGORY" "captured")
   (if (not (or (null author) (string= "" author)))
       (org-set-property "AUTHOR" author))
