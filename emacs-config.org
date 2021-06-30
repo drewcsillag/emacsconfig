@@ -64,6 +64,7 @@ idea for this way of doing it from [[https://www.youtube.com/watch?app=desktop&v
 * Configure org-mode basic bits
 #+begin_src emacs-lisp
 (setq org-agenda-files '("~/org/main.org" "~/org/main.org_archive" "~/org/someday.org" "~/org/someday.org_archive"))
+(setq org-id-files '("~/org/main.org" "~/org/main.org_archive" "~/org/someday.org" "~/org/someday.org_archive" "~/org/rip.org"))
 (setq org-clock-display-default-range 'untilnow)
 (setq org-enforce-todo-dependencies t)
 (setq org-log-done 'time)
@@ -518,6 +519,7 @@ or 13-3 for 13:00-13:30
 #+end_src
 
 * Note a doc link with a READ
+
 #+begin_src emacs-lisp
 (defun make-doc-read-item (&optional title author via)
   (interactive "stitle: 
@@ -539,6 +541,7 @@ svia: ")
       (org-set-property "AUTHOR" author))
   (if (not (or (null via) (string= "" via)))
       (org-set-property "VIA" via))
+  (org-cycle) 
   )
 #+end_src
 
