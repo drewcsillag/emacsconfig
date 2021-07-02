@@ -235,6 +235,11 @@ Also adds linewrap for long lines
 #+RESULTS:
 : ox-twbs
 
+* So we can export json
+#+begin_src emacs-lisp
+(require 'ox-json)
+#+end_src
+
 * source code highlighting in exported HTML (needs htmlize to be installed)
 #+begin_src emacs-lisp
 (require 'htmlize)
