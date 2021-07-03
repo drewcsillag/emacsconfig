@@ -174,7 +174,6 @@ Also, because I hadn't understood how org-roam links really worked
 ;  '(
 ;  ("Hacker News" "https://hnrss.org/frontpage?count=50" "~/org/rss/feeds.org" "Hacker News Entries")
 ;  ("Ask A Manager" "https://www.askamanager.org/feed" "~/org/rss/feeds.org" "Ask A Manager")
-;  ("Instapundit" "https://pjmedia.com/instapundit/feed" "~/org/rss/feeds.org" "Instapundit")
 ;  ))
 #+end_src
 
