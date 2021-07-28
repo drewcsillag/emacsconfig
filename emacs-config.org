@@ -163,6 +163,20 @@ Also, because I hadn't understood how org-roam links really worked
   (insert-char 32)
   (widen)
   )
+
+(defun team-meeting-notes ()
+  (interactive)
+  (beginning-of-line)
+  (set-mark-command nil)
+  (end-of-line)
+  (kill-region 0 0 t)
+  (insert "**** ") (yank) (insert " Platform Strategy       :comms:\n")
+  (insert "***** Platform Strategy Standup Me ") (yank) (insert "       :me:\n")
+  (insert "***** Platform Strategy Standup Jenny Zhou ") (yank) (insert "       :team_jenny_zhou:\n")
+  (insert "***** Platform Strategy Standup Anthony Vardaro ") (yank) (insert "       :team_anthony_vardaro:\n")
+  (insert "***** Platform Strategy Standup Griffin Dunn ") (yank) (insert "       :team_griffin_dunn:\n")
+  (org-align-tags t)
+)
 #+end_src
 
 #+RESULTS:
@@ -382,7 +396,8 @@ but I don't have pdflatex installed... :(
   (interactive)
   (switch-to-buffer "main.org")
   (if (null (get-buffer "main.org<capture>"))
-	(clone-indirect-buffer-other-window "main.org<capture>" t))
+    (progn
+	(clone-indirect-buffer-other-window "main.org<capture>" t)
   (switch-to-buffer "main.org<capture>")
   (beginning-of-buffer)
   (search-forward "* TODAY")
@@ -397,6 +412,7 @@ but I don't have pdflatex installed... :(
   (org-return)
   (narrow-to-region (mark) (point))
   )
+  (switch-to-buffer "main.org<capture>")))  
 #+end_src
 
 #+RESULTS:
@@ -537,7 +553,7 @@ svia: ")
   (right-char 8)
   (if (not (or (null title) (string= "" title)))
       (progn
-	(insert (concat title " "))
+	(insert (concat title ""))
 	(org-set-property "TITLE" title)))
   (org-set-property "CAPTURED"  (format-time-string "[%Y-%m-%d %a %H:%M]" (current-time)))
   (org-set-property "CATEGORY" "captured")
@@ -552,19 +568,48 @@ svia: ")
 #+RESULTS:
 : make-doc-read-item
 
+* Take a non-bulletted todo from a note and drop it in capture
+If with prefix arg == 4 (i.e. ^u), it will copy the region, rather
+than copying the current line
+#+begin_src emacs-lisp
+(defun to-my-capture (&optional arg)
+  (interactive "p")
+  (let ((bufname (buffer-name)))
+    (if (not (= arg 4))
+      (progn
+        (beginning-of-line)
+        (set-mark (point))
+        (end-of-line)))
+    (kill-ring-save (point) (mark))
+    (my-org-capture)
+    (end-of-buffer)
+    (org-return)
+    (insert "** ")
+    (yank)
+    (switch-to-buffer bufname)))
+#+end_src
+
+#+RESULTS:
+: to-my-capture
+
 * All keybindings
 #+begin_src emacs-lisp
 (define-key org-mode-map (kbd "C-c C-x u") 'make-uuid-link)
 (define-key org-mode-map (kbd "C-c C-x m") 'add-meeting-note)
 (define-key org-mode-map (kbd "C-c C-x C-m") 'find-meeting-notes)
 (define-key org-mode-map (kbd "C-c C-x C-t") 'go-to-today)
+(define-key org-mode-map (kbd "C-c C-x t") 'to-my-capture)
 ;; binds over top of org-columns existing binding
 (define-key org-mode-map (kbd "C-c C-x C-c") 'my-org-capture)
 (define-key org-mode-map (kbd "C-c C-x C-s") 'save-org)
 (define-key org-mode-map (kbd "C-c C-x C-g") 'my-org-grep)
 (define-key org-mode-map (kbd "C-c C-x r") 'make-doc-read-item)
 (define-key org-mode-map (kbd "C-c C-x x") 'set-meeting-time)
+(define-key org-mode-map (kbd "C-c C-x C-p") 'team-meeting-notes)
 #+end_src
+
+#+RESULTS:
+: set-meeting-time
 
 * Under consideration
 ** Ways to ensure everything has an id
