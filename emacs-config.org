@@ -99,7 +99,7 @@ like when the headline is too long and I don't want to bother
 
 Also, because I hadn't understood how org-roam links really worked
 #+begin_src emacs-lisp
-(defun make-uuid-link ()
+(defun make-get-uuid ()
   (interactive)
   (let (
 	  (existing-id (org-entry-get (mark) "ID"))
@@ -110,8 +110,11 @@ Also, because I hadn't understood how org-roam links really worked
 	  (save-excursion
 	    (goto-char (mark))
 	    (org-set-property "ID" id)))
-    (setq id-to-insert (or existing-id id))
-    (insert "[[id:" id-to-insert "][")))
+    (or existing-id id)))
+
+(defun make-uuid-link ()
+  (interactive)
+  (insert "[[id:" (make-get-uuid) "]["))
 #+end_src
 
 
@@ -405,7 +408,7 @@ but I don't have pdflatex installed... :(
   (search-forward "** -- Dumping ground")
   (previous-line)
   (beginning-of-line)
-  (set-mark (point))
+  (set-mark-command nil)
   (next-line)
   (next-line)
   (end-of-line)
@@ -571,21 +574,42 @@ svia: ")
 * Take a non-bulletted todo from a note and drop it in capture
 If with prefix arg == 4 (i.e. ^u), it will copy the region, rather
 than copying the current line
+
 #+begin_src emacs-lisp
 (defun to-my-capture (&optional arg)
   (interactive "p")
-  (let ((bufname (buffer-name)))
+  (let ((bufname (buffer-name))
+	(uuid))
     (if (not (= arg 4))
       (progn
         (beginning-of-line)
         (set-mark (point))
-        (end-of-line)))
+        (end-of-line)
+	(setq uuid (make-get-uuid))
+	)
+      (progn
+	(save-excursion
+	  (set-mark (min (point) (mark)))
+	  (setq uuid (make-get-uuid))
+	  )))
     (kill-ring-save (point) (mark))
     (my-org-capture)
     (end-of-buffer)
     (org-return)
+    (set-mark-command nil)
     (insert "** ")
     (yank)
+    (pop-to-mark-command)
+    (set-mark-command nil)
+    (right-char 5) ;; go past TODO or READ
+    ;; if it's not todo, go back to the beginning of the line
+    (let ((keyword (buffer-substring (mark) (point))))
+      (if (not (string= "TODO " keyword))
+	  (left-char 5))
+      ;; make a uuid link to cover the rest
+      (insert "[[id:" uuid "][")
+      (end-of-line)
+      (insert "]]"))
     (switch-to-buffer bufname)))
 #+end_src
 
