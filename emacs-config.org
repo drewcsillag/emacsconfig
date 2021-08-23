@@ -283,7 +283,8 @@ but I don't have pdflatex installed... :(
   (beginning-of-buffer)
   (search-forward "* TODAY")
   (outline-show-children 1)
-  (search-forward "----------")
+  (search-forward "** -- Hot Topics")
+  (next-line)
   (org-forward-heading-same-level 1)
   )
 #+end_src
