@@ -94,7 +94,7 @@ idea for this way of doing it from [[https://www.youtube.com/watch?app=desktop&v
 (put 'narrow-to-region 'disabled nil)
 #+end_src
 
-* For cases where org-roam is too cumbersome 
+* I don't really do org-roam, but ID links are good
 like when the headline is too long and I don't want to bother
 
 Also, because I hadn't understood how org-roam links really worked
@@ -116,7 +116,6 @@ Also, because I hadn't understood how org-roam links really worked
   (interactive)
   (insert "[[id:" (make-get-uuid) "]["))
 #+end_src
-
 
 * Create a function so my meeting notes are properly labelled
 #+begin_src emacs-lisp
@@ -185,45 +184,6 @@ Also, because I hadn't understood how org-roam links really worked
 #+RESULTS:
 : add-meeting-note
 
-* TURNED OFF Setup RSS Feeds (^C^X g to update)
-#+begin_src emacs-lisp
-;(setq org-feed-alist 
-;  '(
-;  ("Hacker News" "https://hnrss.org/frontpage?count=50" "~/org/rss/feeds.org" "Hacker News Entries")
-;  ("Ask A Manager" "https://www.askamanager.org/feed" "~/org/rss/feeds.org" "Ask A Manager")
-;  ))
-#+end_src
-
-** A failed attempt to get reddit orgmode feed to work
-#+begin_src 
-(setq org-feed-retrieve-method 'curl)
-(setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin"))
-#+end_src
-
-#+begin_src shell
-echo $PATH
-export PATH
-wget -h
-#+end_src
-
-#+begin_src 
-;(defun org-feed-get-feed (url)
-;  "Get the RSS feed file at URL and return the buffer."
-;  (cond
-;   ((eq org-feed-retrieve-method 'url-retrieve-synchronously)
-;    (org-feed-skip-http-headers (url-retrieve-synchronously url)))
-;   ((eq org-feed-retrieve-method 'curl)
-;    (ignore-errors (kill-buffer org-feed-buffer))
-;    (call-process "curl" nil org-feed-buffer nil "--silent" url)
-;    org-feed-buffer)
-;   ((eq org-feed-retrieve-method 'wget)
-;    (ignore-errors (kill-buffer org-feed-buffer))
-;    (call-process "wget" nil org-feed-buffer nil "-q" "-O" "-" url)
-;    org-feed-buffer)
-;   ((functionp org-feed-retrieve-method)
-;    (funcall org-feed-retrieve-method url))))
-#+end_src
-
 * So babel will be able to run stuff
 
 #+begin_src emacs-lisp
@@ -243,14 +203,6 @@ Also adds linewrap for long lines
 	  (lambda () (org-bullets-mode t) (visual-line-mode)))
 #+end_src
 
-* so we can get pretty HTML export
-#+begin_src emacs-lisp
-(require 'ox-twbs)
-#+end_src
-
-#+RESULTS:
-: ox-twbs
-
 * So we can export json
 #+begin_src emacs-lisp
 (require 'ox-json)
@@ -263,15 +215,6 @@ Also adds linewrap for long lines
 
 #+RESULTS:
 : htmlize
-
-* Theoretically to get source code highlighting with latex
-but I don't have pdflatex installed... :(
-#+begin_src emacs-lisp
-;; (require 'org)
-;; (require 'ox-latex)
-;; (add-to-list 'org-latex-packages-alist '("" "minted"))
-;; (setq org-latex-listings 'minted) 
-#+end_src
 
 * A "reset" to what I want to normally see
 #+begin_src emacs-lisp
@@ -304,7 +247,7 @@ but I don't have pdflatex installed... :(
 5. An ICS file of your events will start to download.
 #+end_quote
 
-* Exclude some tags from inheritance recursive
+* Exclude some tags from recursive inheritance
 #+begin_src emacs-lisp
 (setq org-tags-exclude-from-inheritance '("mentee"))
 #+end_src
@@ -635,118 +578,4 @@ than copying the current line
 
 #+RESULTS:
 : set-meeting-time
-
-* Under consideration
-** Ways to ensure everything has an id
-#+begin_src emacs-lisp
-(require 'org-id)
-#+end_src
-
-(defun my/org-add-ids-to-headlines-in-file ()
-  "Add ID properties to all headlines in the current file which
-do not already have one."
-  (interactive)
-  (org-map-entries 'org-id-get-create))
-  
-(add-hook 'org-mode-hook
-          (lambda ()
-            (add-hook 'before-save-hook 'my/org-add-ids-to-headlines-in-file nil 'local)))
-
-if I used capture
-(add-hook 'org-capture-prepare-finalize-hook 'org-id-get-create)
-
-#+RESULTS:
-: org-id
-
-** TODO Hide property drawers - Not for now, because I can't unhide them
-#+begin_src 
-(defun org-cycle-hide-drawers (state)
-  "Re-hide all drawers after a visibility state change."
-  (when (and (derived-mode-p 'org-mode)
-             (not (memq state '(overview folded contents))))
-    (save-excursion
-      (let* ((globalp (memq state '(contents all)))
-             (beg (if globalp
-                    (point-min)
-                    (point)))
-             (end (if globalp
-                    (point-max)
-                    (if (eq state 'children)
-                      (save-excursion
-                        (outline-next-heading)
-                        (point))
-                      (org-end-of-subtree t)))))
-        (goto-char beg)
-        (while (re-search-forward org-drawer-regexp end t)
-          (save-excursion
-            (beginning-of-line 1)
-            (when (looking-at org-drawer-regexp)
-              (let* ((start (1- (match-beginning 0)))
-                     (limit
-                       (save-excursion
-                         (outline-next-heading)
-                           (point)))
-                     (msg (format
-                            (concat
-                              "org-cycle-hide-drawers:  "
-                              "`:END:`"
-                              " line missing at position %s")
-                            (1+ start))))
-                (if (re-search-forward "^[ \t]*:END:" limit t)
-                  (outline-flag-region start (point-at-eol) t)
-                  (user-error msg))))))))))
-#+end_src
-
-#+RESULTS:
-: org-cycle-hide-drawers
-
-** BLOCKED Ensure headings have a created attribute - on getting org-expiry from somewhere
-#+begin_src 
-;;
-;; Allow automatically handing of created/expired meta data.
-;;
-(require 'org-expiry)
-;; Configure it a bit to my liking
-(setq
-  org-expiry-created-property-name "CREATED" ; Name of property when an item is created
-  org-expiry-inactive-timestamps   t         ; Don't have everything in the agenda view
-)
-
-(defun mrb/insert-created-timestamp()
-  "Insert a CREATED property using org-expiry.el for TODO entries"
-  (org-expiry-insert-created)
-  (org-back-to-heading)
-  (org-end-of-line)
-  (insert " ")
-)
-  
-;; Whenever a TODO entry is created, I want a timestamp
-;; Advice org-insert-todo-heading to insert a created timestamp using org-expiry
-(defadvice org-insert-todo-heading (after mrb/created-timestamp-advice activate)
-  "Insert a CREATED property using org-expiry.el for TODO entries"
-  (mrb/insert-created-timestamp)
-)
-;; Make it active
-(ad-activate 'org-insert-todo-heading)
-
-#+end_src
-*** If I ever use emacs capture (instead of mine own)
-(require 'org-capture)
-(defadvice org-capture (after mrb/created-timestamp-advice activate)
-  "Insert a CREATED property using org-expiry.el for TODO entries"
-  ; Test if the captured entry is a TODO, if so insert the created
-  ; timestamp property, otherwise ignore
-  (when (member (org-get-todo-state) org-todo-keywords-1)
-    (mrb/insert-created-timestamp)))
-(ad-activate 'org-capture)
-
-;; Add feature to allow easy adding of tags in a capture window
-(defun mrb/add-tags-in-capture()
-  (interactive)
-  "Insert tags in a capture window without losing the point"
-  (save-excursion
-    (org-back-to-heading)
-    (org-set-tags)))
-;; Bind this to a reasonable key
-(define-key org-capture-mode-map "\C-c\C-t" 'mrb/add-tags-in-capture)
 
