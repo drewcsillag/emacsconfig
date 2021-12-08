@@ -64,7 +64,7 @@ idea for this way of doing it from [[https://www.youtube.com/watch?app=desktop&v
 * Configure org-mode basic bits
 #+begin_src emacs-lisp
 (setq org-agenda-files '("~/org/main.org" "~/org/main.org_archive" "~/org/someday.org" "~/org/someday.org_archive"))
-(setq org-id-files '("~/org/main.org" "~/org/main.org_archive" "~/org/someday.org" "~/org/someday.org_archive" "~/org/rip.org"))
+(setq org-id-files '("~/org/main.org" "~/org/main.org_archive" "~/org/someday.org" "~/org/someday.org_archive" "~/org/rip.org" "~/org/main.org_archive_20210119-20210521" "~/org/main.org_archive_20210522-20211022"))
 (setq org-clock-display-default-range 'untilnow)
 (setq org-enforce-todo-dependencies t)
 (setq org-log-done 'time)
@@ -117,7 +117,7 @@ Also, because I hadn't understood how org-roam links really worked
   (insert "[[id:" (make-get-uuid) "]["))
 #+end_src
 
-* Create a function so my meeting notes are properly labelled
+* TODO Create a function so my meeting notes are properly labelled
 #+begin_src emacs-lisp
 (defun find-meeting-notes (&optional name)
   "Find the person that I met with"
@@ -168,18 +168,45 @@ Also, because I hadn't understood how org-roam links really worked
 
 (defun team-meeting-notes ()
   (interactive)
-  (beginning-of-line)
   (set-mark-command nil)
-  (end-of-line)
-  (kill-region 0 0 t)
-  (insert "**** ") (yank) (insert " Platform Strategy       :comms:\n")
-  (insert "***** Platform Strategy Standup Me ") (yank) (insert "       :me:\n")
-  (insert "***** Platform Strategy Standup Jenny Zhou ") (yank) (insert "       :team_jenny_zhou:\n")
-  (insert "***** Platform Strategy Standup Anthony Vardaro ") (yank) (insert "       :team_anthony_vardaro:\n")
-  (insert "***** Platform Strategy Standup Griffin Dunn ") (yank) (insert "       :team_griffin_dunn:\n")
-  (org-align-tags t)
+  (beginning-of-line)
+  (let ((datestamp (buffer-substring (mark) (point))))
+    (kill-region (point) (mark))
+    (beginning-of-buffer)
+    (search-forward-regexp "^\\*\\*\\*\\* PLATFORM STRATEGY TEMPLATE")
+    (org-show-subtree)
+    (next-line)
+    (beginning-of-line)
+    (set-mark-command nil)
+;;    (org-forward-heading-same-level 1)  ;; TRY THIS -- will need to futz if I do this
+    (search-forward-regexp "^\\*\\*\\*\\* ")
+    (beginning-of-line)
+    (kill-ring-save 0 0 t)
+    (insert "**** _DATE_ Platform Strategy\n")
+    (yank)
+    (set-mark-command nil)
+    (search-backward "**** _DATE_ Platform Strategy")
+    (search-forward-regexp "^\\*\\*\\*\\* ") 
+    (narrow-to-region (mark) (point))
+    (replace-string "_DATE_" datestamp)
+    (widen)
+    (search-backward-regexp "^\\*\\*\\*\\* PLATFORM STRATEGY TEMPLATE")
+    (org-flag-subtree 'outline)
+    (org-align-tags t)
+  )
 )
 #+end_src
+
+#+RESULTS:
+: team-meeting-notes
+
+**** PLATFORM STRATEGY TEMPLATE                                                           :comms:
+***** Platform Strategy Standup Me _DATE_                                                 :me:
+***** Platform Strategy Standup This person _DATE_                                        :team_this_persos:
+***** Platform Strategy Standup John Smith _DATE_                                         :team_john_smith:
+***** Platform Strategy Standup Foobar _DATE_                                             :team_foobar:
+**** <2021-11-18 Thu> Platform Strategy                                                   :comms:
+
 
 #+RESULTS:
 : add-meeting-note
