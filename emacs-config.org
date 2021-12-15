@@ -193,6 +193,7 @@ Also, because I hadn't understood how org-roam links really worked
     (search-backward-regexp "^\\*\\*\\*\\* PLATFORM STRATEGY TEMPLATE")
     (org-flag-subtree 'outline)
     (org-align-tags t)
+    (next-line)
   )
 )
 #+end_src
@@ -276,7 +277,7 @@ Also adds linewrap for long lines
 
 * Exclude some tags from recursive inheritance
 #+begin_src emacs-lisp
-(setq org-tags-exclude-from-inheritance '("mentee"))
+(setq org-tags-exclude-from-inheritance '("mentee" "dd_source"))
 #+end_src
 
 #+RESULTS:
