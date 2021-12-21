@@ -252,6 +252,8 @@ Also adds linewrap for long lines
   (widen)
   (org-global-cycle 1)
   (beginning-of-buffer)
+  (search-forward "* In My Face")
+  (outline-show-children 1)
   (search-forward "* TODAY")
   (outline-show-children 1)
   (search-forward "** -- Hot Topics")
@@ -588,6 +590,30 @@ than copying the current line
 #+RESULTS:
 : to-my-capture
 
+* Go to SCHEDULED, pop it open and make a TODO line below
+#+begin_src emacs-lisp
+(defun go-to-scheduled ()
+ (interactive)
+ (beginning-of-buffer)
+ (search-forward "* SCHEDULED")
+ (outline-show-children 1)
+ (next-line)
+ (beginning-of-line))
+
+(defun add-scheduled ()
+ (interactive)
+ (go-to-scheduled)
+ (insert "\n")
+ (previous-line)
+ (insert "** TODO \nSCHEDULED:")
+ (previous-line)
+ (end-of-line)
+)
+#+end_src
+
+#+RESULTS:
+: add-scheduled
+
 * All keybindings
 #+begin_src emacs-lisp
 (define-key org-mode-map (kbd "C-c C-x u") 'make-uuid-link)
@@ -600,6 +626,8 @@ than copying the current line
 (define-key org-mode-map (kbd "C-c C-x C-s") 'save-org)
 (define-key org-mode-map (kbd "C-c C-x C-g") 'my-org-grep)
 (define-key org-mode-map (kbd "C-c C-x r") 'make-doc-read-item)
+(define-key org-mode-map (kbd "C-c C-x q") 'go-to-scheduled)
+(define-key org-mode-map (kbd "C-c C-x C-q") 'add-scheduled)
 (define-key org-mode-map (kbd "C-c C-x x") 'set-meeting-time)
 (define-key org-mode-map (kbd "C-c C-x C-p") 'team-meeting-notes)
 #+end_src
