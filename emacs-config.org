@@ -64,7 +64,8 @@ idea for this way of doing it from [[https://www.youtube.com/watch?app=desktop&v
 * Configure org-mode basic bits
 #+begin_src emacs-lisp
 (setq org-agenda-files '("~/org/main.org" "~/org/main.org_archive" "~/org/someday.org" "~/org/someday.org_archive"))
-(setq org-id-files '("~/org/main.org" "~/org/main.org_archive" "~/org/someday.org" "~/org/someday.org_archive" "~/org/rip.org" "~/org/main.org_archive_20210119-20210521" "~/org/main.org_archive_20210522-20211022"))
+(setq org-id-files '("~/org/main.org" "~/org/main.org_archive" "~/org/someday.org" "~/org/someday.org_archive" "~/org/rip.org" "~/org/main.org_archive_20210119-20210521" "~/org/main.org_archive_20210522-20211022" "~/org/slips.org"
+"~/org/meeting_archive_20210121-20210521.org"))
 (setq org-clock-display-default-range 'untilnow)
 (setq org-enforce-todo-dependencies t)
 (setq org-log-done 'time)
@@ -117,7 +118,32 @@ Also, because I hadn't understood how org-roam links really worked
   (insert "[[id:" (make-get-uuid) "]["))
 #+end_src
 
-* TODO Create a function so my meeting notes are properly labelled
+* Make links to JIRA
+** Make links to the platstrat board
+#+begin_src emacs-lisp
+(defun make-platstrat-link (&optional ticketno)
+  "make a link to the PLATSTRAT jira board"
+  (interactive "sPlatstrat ticket #> ")
+  (insert (concat "[[https://datadoghq.atlassian.net/browse/PLATSTRAT-" ticketno "][PLATSTRAT-" ticketno "]]"))
+)
+#+end_src
+
+#+RESULTS:
+: make-platstrat-link
+
+** Make jira link
+#+begin_src emacs-lisp
+(defun make-jira-link (&optional ticketno)
+  "make a link to the PLATSTRAT jira board"
+  (interactive "sJIRA ticket #> ")
+  (insert (concat "[[https://datadoghq.atlassian.net/browse/" ticketno "][" ticketno "]]"))
+)
+#+end_src
+
+#+RESULTS:
+: make-jira-link
+
+* Create a function so my meeting notes are properly labelled
 #+begin_src emacs-lisp
 (defun find-meeting-notes (&optional name)
   "Find the person that I met with"
@@ -256,9 +282,7 @@ Also adds linewrap for long lines
   (outline-show-children 1)
   (search-forward "* TODAY")
   (outline-show-children 1)
-  (search-forward "** -- Hot Topics")
   (next-line)
-  (org-forward-heading-same-level 1)
   )
 #+end_src
 
@@ -630,6 +654,8 @@ than copying the current line
 (define-key org-mode-map (kbd "C-c C-x C-q") 'add-scheduled)
 (define-key org-mode-map (kbd "C-c C-x x") 'set-meeting-time)
 (define-key org-mode-map (kbd "C-c C-x C-p") 'team-meeting-notes)
+(define-key org-mode-map (kbd "C-c p") 'make-platstrat-link)
+(define-key org-mode-map (kbd "C-c j") 'make-jira-link)
 #+end_src
 
 #+RESULTS:

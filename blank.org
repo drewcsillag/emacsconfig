@@ -1,7 +1,6 @@
+* SCHEDULED
+* In My Face
 * TODAY
-** ----------------
-** -- Hot Topics --
-** ----------------
 ** foo
 ** ------------------------------
 ** -- Dumping ground (capture) --
